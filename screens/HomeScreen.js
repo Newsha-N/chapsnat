@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { FlatList, Text, View, TouchableOpacity, StyleSheet } from "react-native";
 import db from "../firebase";
-
+import firebase from "@firebase/app";
 export default function HomeScreen({ navigation }) {
   const [chatList, setChatList] = useState([]);
 
   useEffect(() => {
     let chatsRef = db.collection("Chats");
-
+    let query = chatsRef.where("users", "array-contains", firebase.auth().currentUser.uid);
     // .then() like a callback function
-    chatsRef.get().then((querySnapshot) => {
+    let unsubscribeFromNewSnapshots = query
+    .onSnapshot((querySnapshot) => {
       let newChatList = [];
       querySnapshot.forEach((doc) => {
         let newChat = { ...doc.data() };
@@ -21,6 +22,9 @@ export default function HomeScreen({ navigation }) {
       });
       setChatList(newChatList);
     });
+    return function cleanupBeforeUnmointing(){
+        unsubscribeFromNewSnapshots();
+    };
   }, []);
 
   return (
